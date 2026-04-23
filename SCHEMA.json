@@ -1,0 +1,827 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aks-spec.dev/schemas/v0.1.0/bundle.json",
+  "title": "AKS Bundle",
+  "description": "Agent Knowledge Standard v0.1.0 \u2014 a portable compiled domain knowledge bundle",
+  "type": "object",
+  "required": [
+    "aks_version",
+    "domain",
+    "stack_id",
+    "stack_name",
+    "compiled_at",
+    "scope",
+    "entity_count",
+    "relationship_count",
+    "entities",
+    "relationships"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "aks_version": {
+      "type": "string",
+      "const": "0.2.0",
+      "description": "AKS spec version. Consumers use this to validate compatibility before processing a bundle."
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Lowercase hyphenated slug identifying the knowledge domain.",
+      "examples": [
+        "software-engineering",
+        "erp-integration",
+        "healthcare-billing"
+      ]
+    },
+    "stack_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable UUID for this Knowledge Stack. Does not change across recompilations."
+    },
+    "stack_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name for this Knowledge Stack."
+    },
+    "compiled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when this bundle was generated."
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "stack",
+        "workspace",
+        "domain"
+      ],
+      "description": "Visibility boundary. stack=private, workspace=org-shared, domain=public community-governed."
+    },
+    "entity_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MUST equal the length of the entities array."
+    },
+    "relationship_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MUST equal the length of the relationships array."
+    },
+    "document_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "OPTIONAL. Total source documents compiled into this Stack."
+    },
+    "connector_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "OPTIONAL. Total connected sources (Slack, Jira, etc.) attached to this Stack."
+    },
+    "compilation_strategy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "incremental",
+        "global",
+        null
+      ],
+      "description": "OPTIONAL. How entity descriptions were compiled. incremental=per-document sequential. global=two-phase with full domain vocabulary awareness. Consumers MAY use this to interpret description quality."
+    },
+    "documents": {
+      "type": "array",
+      "description": "Source documents compiled into this Stack with quality audit results. OPTIONAL but RECOMMENDED.",
+      "items": {
+        "$ref": "#/$defs/AKSDocument"
+      }
+    },
+    "connectors": {
+      "type": "array",
+      "description": "OPTIONAL. Connected sources attached to this Stack.",
+      "items": {
+        "$ref": "#/$defs/AKSConnector"
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AKSEntity"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AKSRelationship"
+      }
+    },
+    "runs": {
+      "type": "array",
+      "description": "Agent run records. Drives coverage awareness.",
+      "items": {
+        "$ref": "#/$defs/AKSRun"
+      }
+    },
+    "recommended_tools": {
+      "type": "array",
+      "description": "OPTIONAL. MCP-compatible tool references. Informational only.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mcp_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "filters_applied": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "OPTIONAL. Present when this bundle is a filtered subset. Consumers MUST check this before assuming the bundle is the full Stack.",
+      "additionalProperties": false,
+      "properties": {
+        "min_confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "verified_only": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "entity_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "max_entities": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "AKSSource": {
+      "title": "AKSSource",
+      "description": "Traceability block on every entity and relationship. Records origin, model, verification, and pipeline.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UUID of the source document. Present when source_kind is document."
+        },
+        "connector_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the connector. Present when source_kind is connector. Exactly one of document_id or connector_id SHOULD be present."
+        },
+        "source_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "document",
+            "connector",
+            "backfeed",
+            "manual",
+            null
+          ],
+          "description": "How this knowledge unit was produced."
+        },
+        "extracted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the knowledge unit was extracted from its source."
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Model that performed the extraction.",
+          "examples": [
+            "claude-sonnet-4-6",
+            "gpt-4o-mini"
+          ]
+        },
+        "verified": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether a human has reviewed and confirmed this knowledge unit. Drives scope graduation."
+        },
+        "pipeline": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Extraction pipeline used.",
+          "examples": [
+            "llamaindex-schema-extraction",
+            "backfeed",
+            "manual"
+          ]
+        }
+      }
+    },
+    "AKSConnector": {
+      "title": "AKSConnector",
+      "description": "A connected data source attached to a Knowledge Stack.",
+      "type": "object",
+      "required": [
+        "id",
+        "provider",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Stable UUID. Referenced by AKSSource.connector_id."
+        },
+        "provider": {
+          "type": "string",
+          "examples": [
+            "slack",
+            "jira",
+            "github",
+            "notion",
+            "salesforce",
+            "database",
+            "custom"
+          ],
+          "description": "Connector provider identifier (slack, jira, github, notion, salesforce, database, custom)."
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. Human-readable label for this connector instance."
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "sync",
+            "live"
+          ],
+          "description": "sync=data periodically ingested into compiled layer. live=data fetched at agent runtime."
+        },
+        "last_synced_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "OPTIONAL. Timestamp of the most recent sync operation. Present only for sync-mode connectors."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "connected",
+            "syncing",
+            "error",
+            null
+          ],
+          "description": "OPTIONAL. Operational status: connected, syncing, or error."
+        }
+      }
+    },
+    "AKSDocumentAudit": {
+      "title": "AKSDocumentAudit",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "duplicate_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Similarity to existing content in the Stack, 0.0 (unique) to 1.0 (duplicate)."
+        },
+        "staleness_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Estimated staleness of this document, 0.0 (current) to 1.0 (outdated)."
+        },
+        "quality_classification": {
+          "type": "string",
+          "enum": [
+            "healthy",
+            "redundant",
+            "outdated",
+            "trivial",
+            "redundant+outdated",
+            "redundant+trivial",
+            "outdated+trivial"
+          ],
+          "description": "Overall quality categorization of the document for compilation purposes."
+        },
+        "contradiction_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of contradictions detected between this document and the existing ontology."
+        },
+        "contradiction_flags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "existing_entity",
+              "existing_claim",
+              "new_claim",
+              "severity"
+            ],
+            "properties": {
+              "existing_entity": {
+                "type": "string"
+              },
+              "existing_claim": {
+                "type": "string"
+              },
+              "new_claim": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW"
+                ]
+              }
+            }
+          },
+          "description": "Detailed list of specific contradictions, with existing and new claims and severity."
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Whether this document passed the quality audit."
+        },
+        "recommendation": {
+          "type": "string",
+          "enum": [
+            "proceed",
+            "review",
+            "dismiss"
+          ],
+          "description": "Suggested action for this document: proceed, review (human needed), or dismiss."
+        }
+      }
+    },
+    "AKSDocument": {
+      "title": "AKSDocument",
+      "description": "A source document compiled into the Stack.",
+      "type": "object",
+      "required": [
+        "id",
+        "filename",
+        "ingested_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Stable UUID. Referenced by AKSSource.document_id."
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Original filename of the source document."
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the document was ingested into the Stack."
+        },
+        "source_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. SHA-256 hash of source content at ingestion. Implementations MAY use this for change detection to avoid redundant re-extraction."
+        },
+        "truncated": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "OPTIONAL. True when source was truncated before extraction due to context window limits. Consumers SHOULD interpret entities from truncated sources with reduced confidence."
+        },
+        "original_length": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "OPTIONAL. Character count before truncation. Present only when truncated is true."
+        },
+        "audit": {
+          "$ref": "#/$defs/AKSDocumentAudit",
+          "description": "Quality audit results produced before ingestion. See AKSDocumentAudit."
+        }
+      }
+    },
+    "AKSEntity": {
+      "title": "AKSEntity",
+      "description": "A compiled knowledge entity \u2014 a node in the knowledge graph. The description field reflects the entity's role within the full compiled domain, not just what one document says about it.",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Stable identifier. Does not change when entity names are updated."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable display name. May change over time; entity id does not."
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Domain-defined category. No global enum.",
+          "examples": [
+            "Concept",
+            "Process",
+            "Role",
+            "Policy",
+            "System",
+            "Artifact",
+            "Event",
+            "Document"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Compiled account of this entity within the context of the full domain. In well-compiled Stacks this is a synthesized account that knows about sibling entities \u2014 not a raw per-document extraction."
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Arbitrary key-value metadata specific to this entity. Domain-defined structure."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Extraction confidence. Increases as more source documents corroborate this entity."
+        },
+        "contributing_documents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "OPTIONAL. UUIDs of all source documents that contributed to this entity via compilation or consolidation. Grows as new documents are ingested. Used to generate sourced entity pages."
+        },
+        "last_seen_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "OPTIONAL. Timestamp of the most recent document ingestion that mentioned or consolidated into this entity. Consumers MAY use this as a staleness signal. Does not affect confidence automatically \u2014 Stack owners decide what to do with stale entities."
+        },
+        "source": {
+          "$ref": "#/$defs/AKSSource",
+          "description": "Traceability block recording how this entity was produced. See AKSSource."
+        }
+      }
+    },
+    "AKSRelationship": {
+      "title": "AKSRelationship",
+      "description": "A typed directed relationship between two entities. Always references entity IDs, never names.",
+      "type": "object",
+      "required": [
+        "id",
+        "from_entity_id",
+        "to_entity_id",
+        "type",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Stable UUID for this relationship."
+        },
+        "from_entity_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Must reference an id present in the entities array."
+        },
+        "to_entity_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Must reference an id present in the entities array."
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Typed verb phrase. Domain-defined.",
+          "examples": [
+            "requires",
+            "produces",
+            "governs",
+            "triggers",
+            "depends_on",
+            "is_part_of"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. Prose describing the relationship in context."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Extraction confidence, 0.0 to 1.0. Increases as more sources corroborate the relationship."
+        },
+        "source": {
+          "$ref": "#/$defs/AKSSource",
+          "description": "Traceability block recording how this relationship was produced. See AKSSource."
+        }
+      }
+    },
+    "AKSRun": {
+      "title": "AKSRun",
+      "description": "An agent run record. Drives coverage awareness.",
+      "type": "object",
+      "required": [
+        "run_id",
+        "stack_id",
+        "aks_version",
+        "trigger",
+        "traversal_path",
+        "entities_used",
+        "confidence",
+        "timestamp"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Stable UUID for this run record."
+        },
+        "stack_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Stack this run queried."
+        },
+        "aks_version": {
+          "type": "string",
+          "const": "0.2.0",
+          "description": "AKS spec version this run was produced under."
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "auto",
+            "api"
+          ],
+          "description": "manual=person asked directly, auto=system fired, api=called via API."
+        },
+        "query": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. The query text that initiated this run, if applicable."
+        },
+        "traversal_path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ordered entity names the agent traversed. The explicit reasoning path."
+        },
+        "entities_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Names of all entities the agent consulted during this run."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ],
+          "description": "Agent self-reported confidence for this run: HIGH, MEDIUM, or LOW."
+        },
+        "source_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "compiled",
+            "live",
+            "hybrid",
+            null
+          ],
+          "description": "OPTIONAL. What the agent drew from. Absent on v0.1.0 records; consumers SHOULD assume compiled."
+        },
+        "origin": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "run",
+            "direct",
+            null
+          ],
+          "description": "Whether this run was produced by an agent execution (run) or submitted directly (direct)."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this run was recorded."
+        }
+      }
+    },
+    "AKSEntityPage": {
+      "title": "AKSEntityPage",
+      "description": "The human-readable page for a compiled entity. Generated on demand from the knowledge graph \u2014 never stored independently.",
+      "type": "object",
+      "required": [
+        "entity_name",
+        "markdown",
+        "generated_at",
+        "source_entity_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entity_name": {
+          "type": "string",
+          "description": "Name of the entity this page represents."
+        },
+        "markdown": {
+          "type": "string",
+          "description": "Full markdown content. Includes sourcing citations when contributing_documents is populated."
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this page was synthesized from the graph."
+        },
+        "source_entity_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the AKSEntity this page was derived from."
+        },
+        "graph_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. Hash or version token of the compiled graph state at generation. Consumers cache pages and invalidate when this changes."
+        },
+        "source_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "compiled",
+            "live",
+            "hybrid",
+            null
+          ],
+          "description": "OPTIONAL. compiled=derived entirely from compiled ontology. hybrid=also incorporates live connector data."
+        },
+        "live_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "OPTIONAL. Connector UUIDs that contributed live data to this page."
+        },
+        "live_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "OPTIONAL. When live connector data was fetched. Distinct from generated_at."
+        }
+      }
+    },
+    "AKSBackfeed": {
+      "title": "AKSBackfeed",
+      "description": "A knowledge unit submitted for backfeed into the Stack. Requires human review before absorption.",
+      "type": "object",
+      "required": [
+        "content",
+        "origin",
+        "stack_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The content submitted for absorption into the Stack."
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "run",
+            "direct"
+          ],
+          "description": "run=produced by an agent run. direct=submitted without a run."
+        },
+        "stack_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Stack this backfeed item is destined for."
+        },
+        "flagged_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "OPTIONAL. Identifier of the user or system that flagged this content."
+        },
+        "source_run_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "OPTIONAL. UUID of the agent run that produced this content, if origin is run."
+        }
+      }
+    }
+  }
+}
