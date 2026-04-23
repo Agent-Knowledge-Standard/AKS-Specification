@@ -318,7 +318,7 @@ A full Knowledge Stack MUST be exportable as an AKS Bundle.
 
 ```json
     {
-      "aks_version": "0.2.0",
+      "aks_version": "0.1.0",
       "domain": "lowercase-hyphenated-slug",
       "stack_id": "uuid",
       "stack_name": "string",
@@ -478,7 +478,7 @@ Every agent run against a Stack SHOULD produce an `AKSRun` record.
     {
       "run_id": "uuid",
       "stack_id": "uuid",
-      "aks_version": "0.2.0",
+      "aks_version": "0.1.0",
       "trigger": "manual | auto | api",
       "query": "string",
       "traversal_path": [ "string" ],

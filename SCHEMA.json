@@ -20,7 +20,7 @@
   "properties": {
     "aks_version": {
       "type": "string",
-      "const": "0.2.0",
+      "const": "0.1.0",
       "description": "AKS spec version. Consumers use this to validate compatibility before processing a bundle."
     },
     "domain": {
@@ -636,7 +636,7 @@
         },
         "aks_version": {
           "type": "string",
-          "const": "0.2.0",
+          "const": "0.1.0",
           "description": "AKS spec version this run was produced under."
         },
         "trigger": {

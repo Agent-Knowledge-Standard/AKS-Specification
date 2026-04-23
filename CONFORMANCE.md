@@ -10,7 +10,7 @@ All v0.1.0 conformant implementations remain conformant with v0.1.0. All new req
 
 ### Exported Stack Format
 
-- [ ] Every exported bundle MUST include `aks_version: "0.2.0"` at the top level
+- [ ] Every exported bundle MUST include `aks_version: "0.1.0"` at the top level
 - [ ] Every exported bundle MUST include `scope` set to one of `stack`, `workspace`, or `domain`
 - [ ] `entity_count` MUST equal the length of the `entities` array
 - [ ] `relationship_count` MUST equal the length of the `relationships` array
