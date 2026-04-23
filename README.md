@@ -79,6 +79,22 @@ Query Interface   - AKS endpoints that agents and tools should call
 Entity Pages   - human-readable pages generated from the graph on demand
 ```
 
+### Two People, One Stack
+
+A Knowledge Stack is most valuable when it is built by more than one kind of contributor. The same Stack serves different roles and gets stronger from each of them.
+
+Consider a support lead and a developer working at the same company. Both need to understand the company's Billing system, and both contribute to the Billing Stack in different ways.
+
+The **support lead** lives in the domain every day. She knows which customer tiers get which discounts, which edge cases trigger manual invoicing, which exceptions exist for enterprise contracts, and how the team actually handles a refund request when the automated flow fails. Her contribution to the Stack comes from internal runbooks, customer escalation notes, Slack threads from incident retrospectives, and the occasional direct edit to correct an extracted entity. She sees Billing as a set of policies, exceptions, and customer outcomes.
+
+The **developer** works on a sliver of the Billing service. He knows how the refund API is structured, which database tables back the invoicing flow, what events get emitted when a subscription upgrades, and which edge cases his service handles versus passes to the payment processor. His contribution comes from the codebase's ADRs, API specs, deployment runbooks, and PR descriptions. He sees Billing as a set of services, data models, and integration points.
+
+Neither of them has a complete picture on their own. The support lead cannot reason about how a bug in the refund API surfaces downstream. The developer cannot reason about why a particular discount policy exists or which customers it applies to. An agent querying either person's mental model would get half the answer.
+
+When both feed the same Stack, the compiled ontology knows that the "Refund" entity is connected to the "Refund API", "Refund Policy", "Customer Tier Discounts", and "Manual Invoicing Exception" entities. An agent answering a question about refunds for an enterprise customer can traverse across the policy, the code, and the exceptional cases without having to know which team owns which piece. The Stack becomes a stronger resource than either contributor could have produced alone, and stronger than the sum of what each of them knows in isolation.
+
+This is the compounding effect of a Knowledge Stack: different roles contribute different facets of the same domain, and the compiled graph holds them together.
+
 A knowledge base waits to be searched. A Knowledge Stack accumulates understanding, compounds from usage, and makes what a domain knows available to any tool through a standard interface, without each tool rebuilding that understanding independently.
 
 AKS defines the compiled ontology and the query interface. How knowledge is compiled from source material is implementation-defined. What agents do with the knowledge they receive is also implementation-defined. AKS governs the layer in between.
